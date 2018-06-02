@@ -44,6 +44,7 @@
       </geometry>
     </collision>
   </link>
+
   <link name="link_1">
     <inertial>
       <origin xyz="0 0 0.4" rpy="0 0 0"/>
@@ -66,6 +67,7 @@
       </geometry>
     </collision>
   </link>
+
   <link name="link_2">
     <inertial>
       <origin xyz="0 0 0.44751" rpy="0 0 0"/>
@@ -88,6 +90,7 @@
       </geometry>
     </collision>
   </link>
+
   <link name="link_3">
     <inertial>
       <origin xyz="0.18842 0.18344 -0.042799" rpy="0 0 0"/>
@@ -110,6 +113,7 @@
       </geometry>
     </collision>
   </link>
+
   <link name="link_4">
     <inertial>
       <origin xyz="0.27146 -0.007326 0" rpy="0 0 0"/>
@@ -132,6 +136,7 @@
       </geometry>
     </collision>
   </link>
+
   <link name="link_5">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -154,6 +159,7 @@
       </geometry>
     </collision>
   </link>
+
   <link name="link_6">
     <inertial>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -319,6 +325,7 @@
     <child link="base_link"/>
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
+
   <joint name="joint_1" type="revolute">
     <origin xyz="0 0 0.33" rpy="0 0 0"/>
     <parent link="base_link"/>
@@ -326,6 +333,7 @@
     <axis xyz="0 0 1"/>
     <limit lower="${-185*deg}" upper="${185*deg}" effort="300" velocity="${123*deg}"/>
   </joint>
+
   <joint name="joint_2" type="revolute">
     <origin xyz="0.35 0 0.42" rpy="0 0 0"/>
     <parent link="link_1"/>
@@ -333,6 +341,7 @@
     <axis xyz="0 1 0"/>
     <limit lower="${-45*deg}" upper="${85*deg}" effort="300" velocity="${115*deg}"/>
   </joint>
+
   <joint name="joint_3" type="revolute">
     <origin xyz="0 0 1.25" rpy="0 0 0"/>
     <parent link="link_2"/>
@@ -340,6 +349,7 @@
     <axis xyz="0 1 0"/>
     <limit lower="${-210*deg}" upper="${(155-90)*deg}" effort="300" velocity="${112*deg}"/>
   </joint>
+
   <joint name="joint_4" type="revolute">
     <origin xyz="0.96 0 -0.054" rpy="0 0 0"/>
     <parent link="link_3"/>
@@ -347,6 +357,7 @@
     <axis xyz="1 0 0"/>
     <limit lower="${-350*deg}" upper="${350*deg}" effort="300" velocity="${179*deg}"/>
   </joint>
+
   <joint name="joint_5" type="revolute">
     <origin xyz="0.54 0 0" rpy="0 0 0"/>
     <parent link="link_4"/>
@@ -354,6 +365,7 @@
     <axis xyz="0 1 0"/>
     <limit lower="${-125*deg}" upper="${125*deg}" effort="300" velocity="${172*deg}"/>
   </joint>
+
   <joint name="joint_6" type="revolute">
     <origin xyz="0.193 0 0" rpy="0 0 0"/>
     <parent link="link_5"/>

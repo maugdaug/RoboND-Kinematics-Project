@@ -20,6 +20,8 @@ from sympy import *
 
 
 def handle_calculate_IK(req):
+    print("\n--------handle_calculate_IK started--------\n")
+
     rospy.loginfo("Received %s eef-poses from the plan" % len(req.poses))
     if len(req.poses) < 1:
         print "No valid poses received"
@@ -28,25 +30,25 @@ def handle_calculate_IK(req):
 
         ### Your FK code here
         # Create symbols
-	
+
 	q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
 	d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
 	a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
-	alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')	
+	alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
 
-	
+
 	# Create Modified DH parameters
-	
-	s = {	alpha0: 0,   	a0: 0,		d1: 0.75,	q1:	q1,
+
+	s = {alpha0:  0,   	a0: 0,		d1: 0.75,	q1:	q1,
 		alpha1: -pi/2,	a1: 0.35,	d2: 0,		q2:	q2-pi/2,
-		alpha2: 0,	a2: 1.25,	d3: 0,		q3:	q3,
+		alpha2:   0,	a2: 1.25,	d3: 0,		q3:	q3,
 		alpha3: -pi/2,	a3: -0.054,	d4: 1.5,	q4:	q4,
 		alpha4: pi/2,	a4: 0,		d5: 0,		q5:	q5,
 		alpha5: -pi/2,	a5: 0,		d6: 0,		q6:	q6,
-		alpha6: 0,	a6: 0,		d7: 0.303,	q7:	q7} # gripper
+		alpha6:   0,	a6: 0,		d7: 0.303,	q7:	q7} # gripper
 
-    	L3WC = sqrt(a3^2 + d4^2)
-	
+    	#L3WC = sqrt(a3^2 + d4^2)
+
 	# Define Modified DH Transformation matrix
 	#
 	#
@@ -58,42 +60,58 @@ def handle_calculate_IK(req):
 	#
         ###
 
-        # Initialize service response
-        joint_trajectory_list = []
-        for x in xrange(0, len(req.poses)):
-            # IK code starts here
-            joint_trajectory_point = JointTrajectoryPoint()
+    # Initialize service response
+    joint_trajectory_list = []
+    for x in xrange(0, len(req.poses)):
+        # IK code starts here
+        joint_trajectory_point = JointTrajectoryPoint()
 
-	    # Extract end-effector position and orientation from request
-	    # px,py,pz = end-effector position
-	    # roll, pitch, yaw = end-effector orientation
-            px = req.poses[x].position.x
-            py = req.poses[x].position.y
-            pz = req.poses[x].position.z
+    # Extract end-effector position and orientation from request
+    # px,py,pz = end-effector position
+    # roll, pitch, yaw = end-effector orientation
+        px = req.poses[x].position.x
+        py = req.poses[x].position.y
+        pz = req.poses[x].position.z
 
-            (roll, pitch, yaw) = tf.transformations.euler_from_quaternion(
-                [req.poses[x].orientation.x, req.poses[x].orientation.y,
-                    req.poses[x].orientation.z, req.poses[x].orientation.w])
+        print("\npx = %r\npy = %r\npz = %r\n" % (px, py, pz))
 
-            ### Your IK code here
-	    # Compensate for rotation discrepancy between DH parameters and Gazebo
-	    #
-	    #
-	    # Calculate joint angles using Geometric IK method
-	    #
-	    #
-            ###
+        (roll, pitch, yaw) = tf.transformations.euler_from_quaternion(
+            [req.poses[x].orientation.x, req.poses[x].orientation.y,
+                req.poses[x].orientation.z, req.poses[x].orientation.w])
 
-            # Populate response for the IK request
-            # In the next line replace theta1,theta2...,theta6 by your joint angle variables
-	    joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
-	    joint_trajectory_list.append(joint_trajectory_point)
+        ### Your IK code here
+    # Compensate for rotation discrepancy between DH parameters and Gazebo
+    #
+    #
+    # Calculate joint angles using Geometric IK method
 
-        rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
-        return CalculateIKResponse(joint_trajectory_list)
+
+    # Wrist center:
+    theta1 = 0.5
+    theta2 = 0
+    theta3 = 0
+
+
+    # Spherical wrist
+    theta4 = 0
+    theta5 = 0
+    theta6 = 0
+
+
+        ###
+
+        # Populate response for the IK request
+        # TODO: In the next line replace theta1,theta2...,theta6 by your joint angle variables
+    joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
+    joint_trajectory_list.append(joint_trajectory_point)
+
+    rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
+    return CalculateIKResponse(joint_trajectory_list)
 
 
 def IK_server():
+    print("\n--------IK_server started--------\n")
+
     # initialize node and declare calculate_ik service
     rospy.init_node('IK_server')
     s = rospy.Service('calculate_ik', CalculateIK, handle_calculate_IK)

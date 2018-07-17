@@ -122,29 +122,40 @@ def handle_calculate_IK(req):
                         [py],
                         [pz]])
 
-    R_G = R_z * R_y * R_x       # Intrinsic?
+    R_Gi = R_z * R_y * R_x       # Intrinsic?
 
 
 
     # Compensate for rotation discrepancy between DH parameters and Gazebo
 
-    R_corr = R_z.subs(y, 180) * R_y.subs(p, -90)    # need radians?
+    R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians?
 
-    R_G = R_G * R_corr
+    R_G = R_Gi * R_corr
 
 
 
     # Calculate joint angles using Geometric IK method
 
-    WC_target = G_target - 0.35 * R_G[:,2]
+    WC = G_target - 0.35 * R_G[:,2]      # using 0.35 instead of 0.303
 
-    side23 = a2.subs(s)
-    side34 = sqrt((a3^2) + (d4^2)).subs(s)
-    side24 =
+    # triangle side lengths
 
+    L23 = a2.subs(s)
+    L34 = sqrt((a3*a3) + (d4*d4)).subs(s)
+    L24 = sqrt(pow((sqrt(WC[0]*WC[0] + WC[1]*WC[1]) - a1), 2) + pow((WC[2] - d1), 2)).subs(s)
+
+    # law of cosines
+
+    phi2 = acos( (L23*L23 + L24*L24 - L34*L34) / (2*L23*L24) )
+    phi3 = acos( (L23*L23 + L34*L34 - L24*L24) / (2*L23*L34) )
+    phi4 = acos( (L24*L24 + L34*L34 - L23*L23) / (2*L24*L34) )
+
+    print("\n")
+    #print(R_Gi)
+    print("\n")
 
     # Wrist center:
-    theta1 = atan2(WC_target[1], WC_target[0])
+    theta1 = 0 # atan2(WC[1], WC[0])
     theta2 = 0
     theta3 = 0
 

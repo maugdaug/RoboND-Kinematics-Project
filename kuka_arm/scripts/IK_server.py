@@ -104,77 +104,77 @@ def handle_calculate_IK(req):
 
         ### Your IK code here
 
-    r, p, y = symbols('r p y')      # roll, pitch, yaw
+        r, p, y = symbols('r p y')      # roll, pitch, yaw
 
-    R_x = Matrix([[1,           0,          0],
-                    [0,     cos(r),     -sin(r)],
-                    [0,     sin(r),     cos(r)]])
+        R_x = Matrix([[1,           0,          0],
+                        [0,     cos(r),     -sin(r)],
+                        [0,     sin(r),     cos(r)]])
 
-    R_y = Matrix([[cos(p),  0,      sin(p)],
-                        [0, 1,          0],
-                [-sin(p),   0,      cos(p)]])
+        R_y = Matrix([[cos(p),  0,      sin(p)],
+                            [0, 1,          0],
+                    [-sin(p),   0,      cos(p)]])
 
-    R_z = Matrix([[cos(y),    -sin(y),  0],
-                    [sin(y),  cos(y),   0],
-                    [0,             0,  1]])
+        R_z = Matrix([[cos(y),    -sin(y),  0],
+                        [sin(y),  cos(y),   0],
+                        [0,             0,  1]])
 
-    G_target = Matrix([ [px],
-                        [py],
-                        [pz]])
+        G_target = Matrix([ [px],
+                            [py],
+                            [pz]])
 
-    R_Gi = R_z * R_y * R_x       # Intrinsic?
-
-
-
-    # Compensate for rotation discrepancy between DH parameters and Gazebo
-
-    R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians?
-
-    R_G = R_Gi * R_corr
+        R_Gi = R_z * R_y * R_x       # Intrinsic?
 
 
 
-    # Calculate joint angles using Geometric IK method
+        # Compensate for rotation discrepancy between DH parameters and Gazebo
 
-    WC = G_target - 0.35 * R_G[:,2]      # using 0.35 instead of 0.303
+        R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians?
 
-    # triangle side lengths
-
-    L23 = a2.subs(s)
-    L34 = sqrt((a3*a3) + (d4*d4)).subs(s)
-    L24 = sqrt(pow((sqrt(WC[0]*WC[0] + WC[1]*WC[1]) - a1), 2) + pow((WC[2] - d1), 2)).subs(s)
-
-    # law of cosines
-
-    phi2 = acos( (L23*L23 + L24*L24 - L34*L34) / (2*L23*L24) )
-    phi3 = acos( (L23*L23 + L34*L34 - L24*L24) / (2*L23*L34) )
-    phi4 = acos( (L24*L24 + L34*L34 - L23*L23) / (2*L24*L34) )
-
-    print("\n")
-    #print(R_Gi)
-    print("\n")
-
-    # Wrist center:
-    theta1 = 0 # atan2(WC[1], WC[0])
-    theta2 = 0
-    theta3 = 0
+        R_G = R_Gi * R_corr
 
 
-    # Spherical wrist
-    theta4 = 0
-    theta5 = 0
-    theta6 = 0
+
+        # Calculate joint angles using Geometric IK method
+
+        WC = G_target - 0.35 * R_G[:,2]      # using 0.35 instead of 0.303
+
+        # triangle side lengths
+
+        L23 = a2.subs(s)
+        L34 = sqrt((a3*a3) + (d4*d4)).subs(s)
+        L24 = sqrt(pow((sqrt(WC[0]*WC[0] + WC[1]*WC[1]) - a1), 2) + pow((WC[2] - d1), 2)).subs(s)
+
+        # law of cosines
+
+        phi2 = acos( (L23*L23 + L24*L24 - L34*L34) / (2*L23*L24) )
+        phi3 = acos( (L23*L23 + L34*L34 - L24*L24) / (2*L23*L34) )
+        phi4 = acos( (L24*L24 + L34*L34 - L23*L23) / (2*L24*L34) )
+
+        print("\n")
+        #print(R_Gi)
+        print("\n")
+
+        # Wrist center:
+        theta1 = 0 # atan2(WC[1], WC[0])
+        theta2 = 0
+        theta3 = 0
 
 
-    ###
+        # Spherical wrist
+        theta4 = 0
+        theta5 = 0
+        theta6 = 0
 
-    # Populate response for the IK request
-    # TODO: In the next line replace theta1,theta2...,theta6 by your joint angle variables
-    joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
-    joint_trajectory_list.append(joint_trajectory_point)
 
-    rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
-    return CalculateIKResponse(joint_trajectory_list)
+        ###
+
+        # Populate response for the IK request
+        # TODO: In the next line replace theta1,theta2...,theta6 by your joint angle variables
+        joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
+        joint_trajectory_list.append(joint_trajectory_point)
+
+        rospy.loginfo("length of Joint Trajectory List: %s" % len(joint_trajectory_list))
+        return CalculateIKResponse(joint_trajectory_list)
 
 
 def IK_server():

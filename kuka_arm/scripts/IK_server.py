@@ -48,7 +48,6 @@ def handle_calculate_IK(req):
 		alpha5: -pi/2,	a5: 0,		d6: 0,		q6:	q6,
 		alpha6:   0,	a6: 0,		d7: 0.303,	q7:	q7} # gripper
 
-    	#L3WC = sqrt(a3^2 + d4^2)
 
 
 
@@ -136,7 +135,7 @@ def handle_calculate_IK(req):
 
         # Calculate joint angles using Geometric IK method
 
-        WC = G_target - 0.35 * R_G[:,2]      # using 0.35 instead of 0.303
+        WC = G_target - 0.303 * R_G[:,2]
 
         # triangle side lengths
 

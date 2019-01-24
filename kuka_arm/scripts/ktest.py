@@ -47,33 +47,29 @@ def test_code(test_case):
             print("EE_ori: %r" % EE_ori)
 
     position = Position(test_case[0][0])
-    orientation = Orientation(test_case[0][1])
+    orientation = Orientation(test_case[0][1])  # in quaternions
 
     class Combine:
         def __init__(self,position,orientation):
             self.position = position
             self.orientation = orientation
-            print("position: %r\norientation: %r" % (self.position, self.orientation))
-        #def __iter__(self):
-        #    return iter(self.position, self.orientation)
-        #def __repr__(self):
-        #    return 'Combine: %r' % list(self)
+            # print("position: %r\norientation: %r" % (self.position, self.orientation))
+
+        ## def __iter__(self):
+        ##    return iter(self.position, self.orientation)
+        ## def __repr__(self):
+        ##    return 'Combine: %r' % list(self)
 
     comb = Combine(position,orientation)
 
     class Pose:
         def __init__(self,comb):
-        #    super(Pose, self).__init()
             self.poses = [comb]
-        #def __iter__(self):
-        #    return iter(self.poses)
-        #def __repr__(self):
-        #    return 'Pose: %r' % list(self)
 
     req = Pose(comb)
     start_time = time()
 
-    print("position:\n%r\n\norientation:\n%r\n" % (req.poses, orientation))
+    print("\ncheck1p:\n%r\ncheck1o:\n%r\n" % (req.poses[0].position.x, req.poses[0].orientation.y))
 
     ########################################################################################
 
@@ -82,7 +78,10 @@ def test_code(test_case):
     print("test_case[0][1]: %r\n" % test_case[0][1])
 
 
-    ## Insert IK code here
+    ######################## Insert IK code here
+    
+    ####################### Create Modified DH parameters 
+
     q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
     d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
     a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
@@ -90,21 +89,20 @@ def test_code(test_case):
 
     alpha, a, d, q = symbols('alpha a d q')
 
-    # Create Modified DH parameters
-    # Define Modified DH Transformation matrix
+    ######################## Define Modified DH Transformation matrix
 
     s = {alpha0: 0,    a0: 0,        d1: 0.75,    q1: q1,
     alpha1: -pi/2,    a1: 0.35,    d2: 0,        q2: q2-pi/2,
     alpha2:   0,    a2: 1.25,    d3: 0,        q3: q3,
     alpha3: -pi/2,    a3: -0.054,    d4: 1.5,    q4: q4,
-    alpha4: pi/2,    a4: 0,        d5: 0,        q5: q5,
+    alpha4: pi/2, 	a4: 0,        d5: 0,        q5: q5,
     alpha5: -pi/2,    a5: 0,        d6: 0,        q6: q6,
     alpha6:   0,    a6: 0,        d7: 0.303,    q7: q7} # gripper
 
 
     
 
-    # Create individual transformation matrices
+    ####################### Create individual transformation matrices
 
     def TF_matrix(alpha, a, d, q):
 
@@ -114,8 +112,6 @@ def test_code(test_case):
                  [0,             0,            0,                    1]])
 
         return TF
-
-    # Create individual transformation matrices
 
     T0_1 = TF_matrix(alpha0, a0, d1, q1).subs(s)
     T1_2 = TF_matrix(alpha1, a1, d2, q2).subs(s)
@@ -127,18 +123,14 @@ def test_code(test_case):
 
     T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
 
-    TF_test = TF_matrix(alpha, a, d, q)
-
-    theta1 = atan2(req[1], req[0])
-    theta2 = 0
-    theta3 = 0
-    theta4 = 0
-    theta5 = 0
-    theta6 = 0
+    # TF_test = TF_matrix(alpha, a, d, q)
 
 
 
-    R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3]
+    ###################### Do math
+
+
+    R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3] # math check seems good
 
 
     r, p, y = symbols('r p y')      # roll, pitch, yaw
@@ -155,11 +147,11 @@ def test_code(test_case):
                     [sin(y),  cos(y),   0],
                     [0,             0,  1]])
 
-    '''
 
-    G_target = Matrix([ [position[0]],
-                        [position[1]],
-                        [position[2]]])
+
+    G_target = Matrix([ [req.poses[0].position.x],
+                        [req.poses[0].position.y],
+                        [req.poses[0].position.z]])
 
     R_Gi = R_z * R_y * R_x       # Intrinsic rotation from frame 6 to gripper
     
@@ -174,32 +166,38 @@ def test_code(test_case):
 
     # Calculate joint angles using Geometric IK method
 
-    WC = G_target - 0.35 * R_G[:,2]      # using 0.35 instead of 0.303
+    WC = G_target - 0.303 * R_G[:,2]
 
-    # triangle side lengths
+
+    # print("\ncheck2a:\n\t%r\n" % T0_1[0:3, 0:3])
+    # print("\ncheck2b:\n\t%r\n" % R0_3[0:3, 0:3])
+
+
+    ### triangle side lengths
 
     L23 = a2.subs(s)
     L34 = sqrt((a3*a3) + (d4*d4)).subs(s)
     L24 = sqrt(pow((sqrt(WC[0]*WC[0] + WC[1]*WC[1]) - a1), 2) + pow((WC[2] - d1), 2)).subs(s)
 
-    # law of cosines
+    ### law of cosines
 
     phi2 = acos( (L23*L23 + L24*L24 - L34*L34) / (2*L23*L24) )
     phi3 = acos( (L23*L23 + L34*L34 - L24*L24) / (2*L23*L34) )
     phi4 = acos( (L24*L24 + L34*L34 - L23*L23) / (2*L24*L34) )
-    '''
 
-    print("R0_3:\n%r" % R0_3)
 
-    print("Pose:\n%r" % req)
 
-    #print("\nT0_1:\n%r\n\nT1_2:\n%r\n\nT2_3:\n%r" % (T0_1, T1_2, T2_3))
-    #print("\nT3_4:\n%r\n\nT4_5:\n%r\n\nT5_6:\n%r" % (T3_4, T4_5, T5_6))
-    #print("\nT6_G:\n%r" % T6_G)
-    #print("\n\n\nT0_1[0:3]:\n%r" % T0_1[0:3,0:3])
-    #print("\n\n\nTF:\n%r\n" % TF_test)
+    ##################### Write values to joint angles
 
-    ##
+    theta1 = atan2(req.poses[0].position.y, req.poses[0].position.x)
+    theta2 = 0
+    theta3 = 0
+    theta4 = 0
+    theta5 = 0
+    theta6 = 0
+
+
+
     ########################################################################################
 
     ########################################################################################

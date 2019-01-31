@@ -71,7 +71,6 @@ def test_code(test_case):
 
     print("\ncheck1p:\n%r\ncheck1o:\n%r\n" % (req.poses[0].position.x, req.poses[0].orientation.y))
 
-
     ########################################################################################
 
     print("test_case: %r" % test_case)
@@ -130,6 +129,26 @@ def test_code(test_case):
 
     ###################### Do math
 
+    (roll, pitch, yaw) = tf.transformations.euler_from_quaternion([
+		req.poses[x].orientation.x, req.poses[x].orientation.y,
+		req.poses[x].orientation.z, req.poses[x].orientation.w])
+
+    E_roll = Matrix([	[1,	0,		0,		0],
+			[0,	cos(roll),	-sin(roll),	0],
+			[0,	sin(roll),	cos(roll),	0],
+			[0,	0,		0,		1]])
+
+    E_pitch = Matrix([	[cos(pitch),	0,	sin(pitch),	0],
+			[0,		1,	0,		0],
+			[-sin(pitch),	0,	cos(pitch),	1],
+			[0,		0,	0,		1]])
+
+    E_yaw = Matrix([	[cos(yaw),	-sin(yaw),	0,	0],
+			[sin(yaw),	cos(yaw),	0,	0],
+			[0,		0,		1,	0],
+			[0,		0,		0,	1]])
+
+    # TODO: simplify, add xyz, subtract 0.303 to get WC
 
     R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3] # math check seems good
 
@@ -149,30 +168,34 @@ def test_code(test_case):
                     [0,             0,  1]])
 
 
+    #f_pos = [req.poses[0].position.x,
+	#	req.poses[0].position.y,
+	#	req.poses[0].position.z]
 
-    G_target = Matrix([ [req.poses[0].position.x],
-                        [req.poses[0].position.y],
-                        [req.poses[0].position.z]])
+    #f_ori = [req.poses[0].orientation.x,
+	#	req.poses[0].orientation.y,
+	#	req.poses[0].orientation.z,
+	#	req.poses[0].orientation.w]
 
-    # R_Gi = R_z * R_y * R_x       # Intrinsic rotation from frame 6 to gripper
+    R_Gi = R_z * R_y * R_x       # Intrinsic rotation from frame 6 to gripper
     
 
     ### Compensate for rotation discrepancy between DH parameters and Gazebo/URDF
 
-    #R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians
+    R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians?
 
-    #R_G = R_Gi * R_corr
+    R_G = R_Gi * R_corr
 
     # TODO: Sub for r, p, y? Or maybe this is supposed to be T6_G = T6_G * R_corr?
     # To do this, we might have to 0-pad R_corr. Actually, T6_G * T_corr won't work.
 
 
-    # WC = G_target - 0.303 * R_G[:,2]	# The 0.303 is already factored in with the DH parameters
+    # WC = G_target - 0.303 * R_G[:,2]
 
 
     # print("\ncheck2a:\n\t%r\n" % T0_1[0:3, 0:3])
     # print("\ncheck2b:\n\t%r\n" % R0_3[0:3, 0:3])
-    print("\n\nched2c(T6_G):\n\t%r\n" % T6_G)
+    # print("\n\nched2c:\n\t%04.8f\n" % f_ori[3])
 
     ### triangle side lengths
 

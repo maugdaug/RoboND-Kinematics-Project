@@ -71,6 +71,7 @@ def test_code(test_case):
 
     print("\ncheck1p:\n%r\ncheck1o:\n%r\n" % (req.poses[0].position.x, req.poses[0].orientation.y))
 
+
     ########################################################################################
 
     print("test_case: %r" % test_case)
@@ -153,37 +154,37 @@ def test_code(test_case):
                         [req.poses[0].position.y],
                         [req.poses[0].position.z]])
 
-    R_Gi = R_z * R_y * R_x       # Intrinsic rotation from frame 6 to gripper
+    # R_Gi = R_z * R_y * R_x       # Intrinsic rotation from frame 6 to gripper
     
 
-    # Compensate for rotation discrepancy between DH parameters and Gazebo
+    ### Compensate for rotation discrepancy between DH parameters and Gazebo/URDF
 
-    R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians?
+    #R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians
 
-    R_G = R_Gi * R_corr
+    #R_G = R_Gi * R_corr
+
+    # TODO: Sub for r, p, y? Or maybe this is supposed to be T6_G = T6_G * R_corr?
+    # To do this, we might have to 0-pad R_corr. Actually, T6_G * T_corr won't work.
 
 
-
-    # Calculate joint angles using Geometric IK method
-
-    WC = G_target - 0.303 * R_G[:,2]
+    # WC = G_target - 0.303 * R_G[:,2]	# The 0.303 is already factored in with the DH parameters
 
 
     # print("\ncheck2a:\n\t%r\n" % T0_1[0:3, 0:3])
     # print("\ncheck2b:\n\t%r\n" % R0_3[0:3, 0:3])
-
+    print("\n\nched2c(T6_G):\n\t%r\n" % T6_G)
 
     ### triangle side lengths
 
     L23 = a2.subs(s)
     L34 = sqrt((a3*a3) + (d4*d4)).subs(s)
-    L24 = sqrt(pow((sqrt(WC[0]*WC[0] + WC[1]*WC[1]) - a1), 2) + pow((WC[2] - d1), 2)).subs(s)
+    #L24 = sqrt(pow((sqrt(WC[0]*WC[0] + WC[1]*WC[1]) - a1), 2) + pow((WC[2] - d1), 2)).subs(s)
 
     ### law of cosines
 
-    phi2 = acos( (L23*L23 + L24*L24 - L34*L34) / (2*L23*L24) )
-    phi3 = acos( (L23*L23 + L34*L34 - L24*L24) / (2*L23*L34) )
-    phi4 = acos( (L24*L24 + L34*L34 - L23*L23) / (2*L24*L34) )
+    #phi2 = acos( (L23*L23 + L24*L24 - L34*L34) / (2*L23*L24) )
+    #phi3 = acos( (L23*L23 + L34*L34 - L24*L24) / (2*L23*L34) )
+    #phi4 = acos( (L24*L24 + L34*L34 - L23*L23) / (2*L24*L34) )
 
 
 
@@ -196,7 +197,7 @@ def test_code(test_case):
     theta5 = 0
     theta6 = 0
 
-
+    #print("\ncheck3:\n\t%r\n" % WC)
 
     ########################################################################################
 

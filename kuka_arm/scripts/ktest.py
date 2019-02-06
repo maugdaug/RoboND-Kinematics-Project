@@ -29,6 +29,7 @@ test_cases = {1:[[[2.16135,-1.42635,1.55109],
 
 
 def test_code(test_case):
+
     ## Set up code
     ## Do not modify!
     x = 0
@@ -37,14 +38,13 @@ def test_code(test_case):
             self.x = EE_pos[0]
             self.y = EE_pos[1]
             self.z = EE_pos[2]
-            print("EE_pos: %r" % EE_pos)
+
     class Orientation:
         def __init__(self,EE_ori):
             self.x = EE_ori[0]
             self.y = EE_ori[1]
             self.z = EE_ori[2]
             self.w = EE_ori[3]
-            print("EE_ori: %r" % EE_ori)
 
     position = Position(test_case[0][0])
     orientation = Orientation(test_case[0][1])  # in quaternions
@@ -53,12 +53,6 @@ def test_code(test_case):
         def __init__(self,position,orientation):
             self.position = position
             self.orientation = orientation
-            # print("position: %r\norientation: %r" % (self.position, self.orientation))
-
-        ## def __iter__(self):
-        ##    return iter(self.position, self.orientation)
-        ## def __repr__(self):
-        ##    return 'Combine: %r' % list(self)
 
     comb = Combine(position,orientation)
 
@@ -69,13 +63,13 @@ def test_code(test_case):
     req = Pose(comb)
     start_time = time()
 
-    print("\ncheck1p:\n%r\ncheck1o:\n%r\n" % (req.poses[0].position.x, req.poses[0].orientation.y))
+    # print("\ncheck1p:\n%r\ncheck1o:\n%r\n" % (req.poses[0].position.x, req.poses[0].orientation.y))
 
     ########################################################################################
 
-    print("test_case: %r" % test_case)
-    print("test_case[0][0]: %r" % test_case[0][0])
-    print("test_case[0][1]: %r\n" % test_case[0][1])
+    # print("test_case: %r" % test_case)
+    # print("test_case[0][0]: %r" % test_case[0][0])
+    # print("test_case[0][1]: %r\n" % test_case[0][1])
 
 
     ######################## Insert IK code here
@@ -123,8 +117,6 @@ def test_code(test_case):
 
     T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
 
-    # TF_test = TF_matrix(alpha, a, d, q)
-
 
 
     ###################### Do math
@@ -133,22 +125,12 @@ def test_code(test_case):
 		req.poses[x].orientation.x, req.poses[x].orientation.y,
 		req.poses[x].orientation.z, req.poses[x].orientation.w])
 
-    E_roll = Matrix([	[1,	0,		0,		0],
-			[0,	cos(roll),	-sin(roll),	0],
-			[0,	sin(roll),	cos(roll),	0],
-			[0,	0,		0,		1]])
-
-    E_pitch = Matrix([	[cos(pitch),	0,	sin(pitch),	0],
-			[0,		1,	0,		0],
-			[-sin(pitch),	0,	cos(pitch),	1],
-			[0,		0,	0,		1]])
-
-    E_yaw = Matrix([	[cos(yaw),	-sin(yaw),	0,	0],
-			[sin(yaw),	cos(yaw),	0,	0],
-			[0,		0,		1,	0],
-			[0,		0,		0,	1]])
 
     # TODO: simplify, add xyz, subtract 0.303 to get WC
+
+    print("\nRoll:\t%04.8f\nPitch:\t%04.8f\nYaw:\t%04.8f\n" % (roll, pitch, yaw))
+
+    # print("\nWrist center:\n%r\n" % WC)
 
     R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3] # math check seems good
 
@@ -167,6 +149,12 @@ def test_code(test_case):
                     [sin(y),  cos(y),   0],
                     [0,             0,  1]])
 
+
+    EE_TF = simplify((R_x * R_y * R_z).row_join(Matrix([[0],[0],[-0.303]])).col_join(Matrix([[0,0,0,1]])))
+    EE_pose = EE_TF.evalf(subs={r:roll, p:pitch, y:yaw})
+
+    print("\nEE_TF_check:\n%r\n" % EE_TF)
+    print("\nEE_pose_check:\n%r\n" % EE_pose)
 
     #f_pos = [req.poses[0].position.x,
 	#	req.poses[0].position.y,

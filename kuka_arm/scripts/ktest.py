@@ -126,8 +126,7 @@ def test_code(test_case):
 		req.poses[x].orientation.z, req.poses[x].orientation.w])
 
 
-    # TODO: simplify, add xyz, subtract 0.303 to get WC
-
+    
     print("\nRoll:\t%04.8f\nPitch:\t%04.8f\nYaw:\t%04.8f\n" % (roll, pitch, yaw))
 
     # print("\nWrist center:\n%r\n" % WC)
@@ -149,6 +148,9 @@ def test_code(test_case):
                     [sin(y),  cos(y),   0],
                     [0,             0,  1]])
 
+
+    #TODO: Verify that the EE_TF matrix is correct, apply the 0.303m translation to get WC
+    #    Verify WC is correct. Use WC value to find q1, q2, q3
 
     EE_TF = simplify((R_x * R_y * R_z).row_join(Matrix([[0],[0],[-0.303]])).col_join(Matrix([[0,0,0,1]])))
     EE_pose = EE_TF.evalf(subs={r:roll, p:pitch, y:yaw})
@@ -175,7 +177,7 @@ def test_code(test_case):
     R_G = R_Gi * R_corr
 
     # TODO: Sub for r, p, y? Or maybe this is supposed to be T6_G = T6_G * R_corr?
-    # To do this, we might have to 0-pad R_corr. Actually, T6_G * T_corr won't work.
+    # To do this, we might have to 0-pad R_corr. Actually, T6_G * T_corr won't work
 
 
     # WC = G_target - 0.303 * R_G[:,2]
@@ -201,7 +203,9 @@ def test_code(test_case):
 
     ##################### Write values to joint angles
 
-    theta1 = atan2(req.poses[0].position.y, req.poses[0].position.x)
+    #TODO: fix theta1, it doesn't include 0.303 offset which explains sort-of-small error
+
+    theta1 = atan2(req.poses[0].position.y, req.poses[0].position.x) # <---------- incorrect
     theta2 = 0
     theta3 = 0
     theta4 = 0

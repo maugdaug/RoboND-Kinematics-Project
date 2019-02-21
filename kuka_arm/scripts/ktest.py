@@ -3,6 +3,7 @@ from sympy import *
 from time import time
 from mpmath import radians
 import tf
+import numpy as np
 
 '''
 Format of test case is [ [[EE position],[EE orientation as quaternions]],[WC location],[joint angles]]
@@ -125,6 +126,7 @@ def test_code(test_case):
 		req.poses[x].orientation.x, req.poses[x].orientation.y,
 		req.poses[x].orientation.z, req.poses[x].orientation.w])
 
+    EE_xyz = [req.poses[0].position.x, req.poses[0].position.y, req.poses[0].position.z]
 
     
     print("\nRoll:\t%04.8f\nPitch:\t%04.8f\nYaw:\t%04.8f\n" % (roll, pitch, yaw))
@@ -152,11 +154,26 @@ def test_code(test_case):
     #TODO: Verify that the EE_TF matrix is correct, apply the 0.303m translation to get WC
     #    Verify WC is correct. Use WC value to find q1, q2, q3
 
-    EE_TF = simplify((R_x * R_y * R_z).row_join(Matrix([[0],[0],[-0.303]])).col_join(Matrix([[0,0,0,1]])))
+    EE_TF = simplify((R_z * R_y * R_x).row_join(Matrix([[EE_xyz[0]],[EE_xyz[1]],[EE_xyz[2]]])).col_join(Matrix([[0,0,0,1]])))
     EE_pose = EE_TF.evalf(subs={r:roll, p:pitch, y:yaw})
 
-    print("\nEE_TF_check:\n%r\n" % EE_TF)
-    print("\nEE_pose_check:\n%r\n" % EE_pose)
+    wrist_offset = Matrix([	[1,	0,	0,	-0.303],
+				[0,	1,	0,	0],
+				[0,	0,	1,	0],
+				[0,	0,	0,	1]])
+
+    WC_pose1 = EE_pose * wrist_offset
+    WC_pose2 = wrist_offset * EE_pose
+
+    # WC_xyz = tf.transformations.translation_from_matrix(np.array(WC_pose1))
+    # WCr, WCp, WCy = tf.transformations.euler_from_matrix(np.array(WC_pose))
+
+    ################################ / // / / / / / / / / / / / / /
+
+    print("\nWC_pose1 =\n%r\n" % WC_pose1)
+
+    # print("\nEE_TF_check:\n%r\n" % EE_TF)
+    print("\nWC_pose2 =\n%r\n" % WC_pose2)
 
     #f_pos = [req.poses[0].position.x,
 	#	req.poses[0].position.y,

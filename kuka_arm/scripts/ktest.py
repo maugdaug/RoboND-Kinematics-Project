@@ -154,55 +154,39 @@ def test_code(test_case):
     #TODO: Verify that the EE_TF matrix is correct, apply the 0.303m translation to get WC
     #    Verify WC is correct. Use WC value to find q1, q2, q3
 
-    EE_TF = simplify((R_z * R_y * R_x).row_join(Matrix([[EE_xyz[0]],[EE_xyz[1]],[EE_xyz[2]]])).col_join(Matrix([[0,0,0,1]])))
+    R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)
+    URDF_to_DH = simplify(R_z * R_y * R_x * R_corr)
+
+    EE_TF = URDF_to_DH.row_join(Matrix([[EE_xyz[0]],[EE_xyz[1]],[EE_xyz[2]]])).col_join(Matrix([[0,0,0,1]]))
     EE_pose = EE_TF.evalf(subs={r:roll, p:pitch, y:yaw})
 
-    wrist_offset = Matrix([	[1,	0,	0,	-0.303],
+
+
+    wrist_offset = Matrix([	[1,	0,	0,	0],
 				[0,	1,	0,	0],
-				[0,	0,	1,	0],
+				[0,	0,	1,	-0.303],
 				[0,	0,	0,	1]])
 
-    WC_pose1 = EE_pose * wrist_offset
-    WC_pose2 = wrist_offset * EE_pose
+    WC_pose = EE_pose * wrist_offset
+    # WC_pose2 = wrist_offset * EE_pose		# doesn't work
 
     # WC_xyz = tf.transformations.translation_from_matrix(np.array(WC_pose1))
     # WCr, WCp, WCy = tf.transformations.euler_from_matrix(np.array(WC_pose))
 
     ################################ / // / / / / / / / / / / / / /
 
-    print("\nWC_pose1 =\n%r\n" % WC_pose1)
+    print("\nWC_pose =\n%r\n" % WC_pose)
 
     # print("\nEE_TF_check:\n%r\n" % EE_TF)
-    print("\nWC_pose2 =\n%r\n" % WC_pose2)
+    #print("\nWC_pose2 =\n%r\n" % WC_pose2)
 
-    #f_pos = [req.poses[0].position.x,
-	#	req.poses[0].position.y,
-	#	req.poses[0].position.z]
-
-    #f_ori = [req.poses[0].orientation.x,
-	#	req.poses[0].orientation.y,
-	#	req.poses[0].orientation.z,
-	#	req.poses[0].orientation.w]
 
     R_Gi = R_z * R_y * R_x       # Intrinsic rotation from frame 6 to gripper
     
 
     ### Compensate for rotation discrepancy between DH parameters and Gazebo/URDF
-
-    R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi/2)    # need radians?
-
     R_G = R_Gi * R_corr
 
-    # TODO: Sub for r, p, y? Or maybe this is supposed to be T6_G = T6_G * R_corr?
-    # To do this, we might have to 0-pad R_corr. Actually, T6_G * T_corr won't work
-
-
-    # WC = G_target - 0.303 * R_G[:,2]
-
-
-    # print("\ncheck2a:\n\t%r\n" % T0_1[0:3, 0:3])
-    # print("\ncheck2b:\n\t%r\n" % R0_3[0:3, 0:3])
-    # print("\n\nched2c:\n\t%04.8f\n" % f_ori[3])
 
     ### triangle side lengths
 

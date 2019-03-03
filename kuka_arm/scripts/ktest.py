@@ -86,13 +86,14 @@ def test_code(test_case):
 
     ######################## Define Modified DH Transformation matrix
 
-    s = {alpha0: 0,    a0: 0,        d1: 0.75,    q1: q1,
-    alpha1: -pi/2,    a1: 0.35,    d2: 0,        q2: q2-pi/2,
-    alpha2:   0,    a2: 1.25,    d3: 0,        q3: q3,
-    alpha3: -pi/2,    a3: -0.054,    d4: 1.5,    q4: q4,
-    alpha4: pi/2, 	a4: 0,        d5: 0,        q5: q5,
-    alpha5: -pi/2,    a5: 0,        d6: 0,        q6: q6,
-    alpha6:   0,    a6: 0,        d7: 0.303,    q7: q7} # gripper
+    s = {	alpha0: 0,    	a0: 0,		d1: 0.75,	q1: q1,
+    		alpha1: -pi/2,	a1: 0.35,	d2: 0,		q2: q2-pi/2,
+    		alpha2:   0,	a2: 1.25,	d3: 0,		q3: q3,
+    		alpha3: -pi/2,	a3: -0.054,	d4: 1.5,	q4: q4,
+    		alpha4: pi/2,	a4: 0,		d5: 0,		q5: q5,
+    		alpha5: -pi/2,	a5: 0,		d6: 0,		q6: q6,
+    		alpha6:   0,	a6: 0,		d7: 0.303,	q7: q7} # gripper
+    # TODO: maybe we can/should convert from UDRF to DH in T6_G
 
 
     
@@ -101,10 +102,10 @@ def test_code(test_case):
 
     def TF_matrix(alpha, a, d, q):
 
-        TF = Matrix([[    cos(q),            -sin(q),        0,                   a],
-                 [sin(q)*cos(alpha),    cos(q)*cos(alpha),    -sin(alpha),      -sin(alpha)*d],
-                 [sin(q)*sin(alpha),    cos(q)*sin(alpha),    cos(alpha),          cos(alpha)*d],
-                 [0,             0,            0,                    1]])
+        TF = Matrix([	[cos(q),		-sin(q),		0,		a],
+        		[sin(q)*cos(alpha),	cos(q)*cos(alpha),	-sin(alpha),	-sin(alpha)*d],
+    			[sin(q)*sin(alpha),	cos(q)*sin(alpha),	cos(alpha),	cos(alpha)*d],
+        		[0,			0,			0,		1]])
 
         return TF
 
@@ -133,22 +134,25 @@ def test_code(test_case):
 
     # print("\nWrist center:\n%r\n" % WC)
 
-    R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3] # math check seems good
+    # R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3] # math check seems good
+    # R3_6 = (R0_3**-1) * T0_G[:3,:3]
+
+    # print("\nR3_6:\n%r\n" % R3_6)
 
 
     r, p, y = symbols('r p y')      # roll, pitch, yaw
 
-    R_x = Matrix([[1,           0,          0],
-                    [0,     cos(r),     -sin(r)],
-                    [0,     sin(r),     cos(r)]])
+    R_x = Matrix([	[1,	0,		0],
+    			[0,	cos(r),		-sin(r)],
+    			[0,	sin(r),		cos(r)]])
 
-    R_y = Matrix([[cos(p),  0,      sin(p)],
-                        [0, 1,          0],
-                [-sin(p),   0,      cos(p)]])
+    R_y = Matrix([	[cos(p),	0,	sin(p)],
+          		[0,		1,	0],
+        		[-sin(p),	0,	cos(p)]])
 
-    R_z = Matrix([[cos(y),    -sin(y),  0],
-                    [sin(y),  cos(y),   0],
-                    [0,             0,  1]])
+    R_z = Matrix([	[cos(y),	-sin(y),	0],
+    			[sin(y),	cos(y),		0],
+    			[0,		0,		1]])
 
 
     #TODO: Verify that the EE_TF matrix is correct, apply the 0.303m translation to get WC
@@ -181,39 +185,36 @@ def test_code(test_case):
     #print("\nWC_pose2 =\n%r\n" % WC_pose2)
 
 
-    R_Gi = R_z * R_y * R_x       # Intrinsic rotation from frame 6 to gripper
-    
-
-    ### Compensate for rotation discrepancy between DH parameters and Gazebo/URDF
-    R_G = R_Gi * R_corr
-
-
-    ### triangle side lengths
-
+    ### triangle side length
+    Lxy = sqrt((WC_pose[0,3]**2)+(WC_pose[1,3]**2))	# hypotenuse of X/Y component of WC
     L23 = a2.subs(s)
-    L34 = sqrt((a3*a3) + (d4*d4)).subs(s)
-    #L24 = sqrt(pow((sqrt(WC[0]*WC[0] + WC[1]*WC[1]) - a1), 2) + pow((WC[2] - d1), 2)).subs(s)
+    L34 = sqrt((a3**2) + (d4**2)).subs(s)
+    L24 = sqrt((Lxy - a1)**2 + (WC_pose[2,3]-d1)**2).subs(s)
+
+    # print("\nLxy_sqrt_test:\n\t%r\n" % Lxy_a)
 
     ### law of cosines
 
-    #phi2 = acos( (L23*L23 + L24*L24 - L34*L34) / (2*L23*L24) )
-    #phi3 = acos( (L23*L23 + L34*L34 - L24*L24) / (2*L23*L34) )
-    #phi4 = acos( (L24*L24 + L34*L34 - L23*L23) / (2*L24*L34) )
+    phi2 = acos( (L23**2 + L24**2 - L34**2) / (2*L23*L24) )
+    phi3 = acos( (L23**2 + L34**2 - L24**2) / (2*L23*L34) )
+    phi4 = acos( (L24**2 + L34**2 - L23**2) / (2*L24*L34) )
 
+    print("\npi =\t%r\n" % (phi2+phi3+phi4))
+
+
+    ###################### spherical wrist
 
 
     ##################### Write values to joint angles
 
-    #TODO: fix theta1, it doesn't include 0.303 offset which explains sort-of-small error
-
-    theta1 = atan2(req.poses[0].position.y, req.poses[0].position.x) # <---------- incorrect
-    theta2 = 0
-    theta3 = 0
+    theta1 = atan2(WC_pose[1,3], WC_pose[0,3])
+    theta2 = pi/2 - phi2 - atan2((WC_pose[2,3]-d1.subs(s)), (Lxy-a1.subs(s)) - 0.35)	# where does 0.35 come from?
+    theta3 = pi/2 - phi3
     theta4 = 0
     theta5 = 0
     theta6 = 0
 
-    #print("\ncheck3:\n\t%r\n" % WC)
+    print("\ntheta2:\t%r\nphi2:\t%r\n" % (theta2,phi2))
 
     ########################################################################################
 
@@ -280,5 +281,6 @@ def test_code(test_case):
 if __name__ == "__main__":
     # Change test case number for different scenarios
     test_case_number = 1
+
 
     test_code(test_cases[test_case_number])

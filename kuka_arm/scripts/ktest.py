@@ -119,7 +119,9 @@ def test_code(test_case):
 
     T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
 
+    # R3_6_sym = T3_4[0:3,0:3]*T4_5[0:3,0:3]*T5_6[0:3,0:3]
 
+    # print("R3_6_sym:\n%r\n" % R3_6_sym)
 
     ###################### Do math
 
@@ -130,7 +132,7 @@ def test_code(test_case):
     EE_xyz = [req.poses[0].position.x, req.poses[0].position.y, req.poses[0].position.z]
 
     
-    print("\nRoll:\t%04.8f\nPitch:\t%04.8f\nYaw:\t%04.8f\n" % (roll, pitch, yaw))
+    print("\nRoll:\t%04.3f\nPitch:\t%04.3f\nYaw:\t%04.3f\n" % (roll, pitch, yaw))
 
     # print("\nWrist center:\n%r\n" % WC)
 
@@ -186,7 +188,7 @@ def test_code(test_case):
 
 
     ### triangle side length
-    Lxy = sqrt((WC_pose[0,3]**2)+(WC_pose[1,3]**2))	# hypotenuse of X/Y component of WC
+    Lxy = sqrt((WC_pose[0,3] * WC_pose[0,3]) + (WC_pose[1,3] * WC_pose[1,3]))	# hypotenuse of X/Y component of WC
     L23 = a2.subs(s)
     L34 = sqrt((a3**2) + (d4**2)).subs(s)
     L24 = sqrt((Lxy - a1)**2 + (WC_pose[2,3]-d1)**2).subs(s)
@@ -201,18 +203,27 @@ def test_code(test_case):
 
     print("\npi =\t%r\n" % (phi2+phi3+phi4))
 
-
-    ###################### spherical wrist
-
-
     ##################### Write values to joint angles
 
     theta1 = atan2(WC_pose[1,3], WC_pose[0,3])
-    theta2 = pi/2 - phi2 - atan2((WC_pose[2,3]-d1.subs(s)), (Lxy-a1.subs(s)) - 0.35)	# where does 0.35 come from?
-    theta3 = pi/2 - phi3
-    theta4 = 0
-    theta5 = 0
-    theta6 = 0
+    theta2 = pi/2 - phi2 - atan2(WC_pose[2,3]-d1.subs(s), Lxy-a1.subs(s) - 0.35)	# where does 0.35 come from?
+    theta3 = pi/2 - phi3 - 0.036							# where does 0.036 come from?
+
+    ###################### spherical wrist
+    R0_3 = T0_1[0:3,0:3] * T1_2[0:3,0:3] * T2_3[0:3,0:3]
+    R0_3 = R0_3.evalf(subs={q1:theta1, q2:theta2, q3:theta3})
+    R3_6 = R0_3.inv() * EE_pose[0:3,0:3]
+
+    W_roll, W_pitch, W_yaw = tf.transformations.euler_from_matrix(np.array(R3_6))
+
+    # R3_6_sym = R3_6_sym * R_corr
+    # print("\nR3_6_sym =\n%r\n" % R3_6_sym)
+
+    theta4 = atan2(R3_6[1,0], -R3_6[0,0])
+    theta5 = atan2(-R3_6[2,0],sqrt(R3_6[0,0]**2 + R3_6[1,0]**2))
+    theta6 = atan2(R3_6[2,1], R3_6[2,2])
+
+    joint_angles = {q1:theta1, q2:theta2, q3:theta3, q4:theta4, q5:theta5, q6:theta6}
 
     print("\ntheta2:\t%r\nphi2:\t%r\n" % (theta2,phi2))
 
@@ -227,19 +238,22 @@ def test_code(test_case):
     ## End your code input for forward kinematics here!
     ########################################################################################
 
+    EE_f = T0_G.evalf(subs=(joint_angles))
+
     ## For error analysis please set the following variables of your WC location and EE location in the format of [x,y,z]
-    your_wc = [1,1,1] # <--- Load your calculated WC values in this array
-    your_ee = [1,1,1] # <--- Load your calculated end effector value from your forward kinematics
+    your_ee = [EE_f[0,3],EE_f[1,3],EE_f[2,3]] # <--- Load your calculated WC values in this array
+    your_wc = [WC_pose[0,3],WC_pose[1,3],WC_pose[2,3]] # <--- Load your calculated end effector value from your forward kinematics
     ########################################################################################
+
 
     ## Error analysis
     print ("\nTotal run time to calculate joint angles from pose is %04.4f seconds" % (time()-start_time))
 
     # Find WC error
     if not(sum(your_wc)==3):
-        wc_x_e = abs(your_wc[0]-test_case[1][0])
-        wc_y_e = abs(your_wc[1]-test_case[1][1])
-        wc_z_e = abs(your_wc[2]-test_case[1][2])
+        wc_x_e = your_wc[0]-test_case[1][0]
+        wc_y_e = your_wc[1]-test_case[1][1]
+        wc_z_e = your_wc[2]-test_case[1][2]
         wc_offset = sqrt(wc_x_e**2 + wc_y_e**2 + wc_z_e**2)
         print ("\nWrist error for x position is: %04.8f" % wc_x_e)
         print ("Wrist error for y position is: %04.8f" % wc_y_e)
@@ -266,13 +280,13 @@ def test_code(test_case):
 
     # Find FK EE error
     if not(sum(your_ee)==3):
-        ee_x_e = abs(your_ee[0]-test_case[0][0][0])
-        ee_y_e = abs(your_ee[1]-test_case[0][0][1])
-        ee_z_e = abs(your_ee[2]-test_case[0][0][2])
+        ee_x_e = your_ee[0]-test_case[0][0][0]
+        ee_y_e = your_ee[1]-test_case[0][0][1]
+        ee_z_e = your_ee[2]-test_case[0][0][2]
         ee_offset = sqrt(ee_x_e**2 + ee_y_e**2 + ee_z_e**2)
-        print ("\nEnd effector error for x position is: %04.8f" % ee_x_e)
-        print ("End effector error for y position is: %04.8f" % ee_y_e)
-        print ("End effector error for z position is: %04.8f" % ee_z_e)
+        print ("\nEnd effector error for x position is: %r" % ee_x_e)
+        print ("End effector error for y position is: %r" % ee_y_e)
+        print ("End effector error for z position is: %r" % ee_z_e)
         print ("Overall end effector offset is: %04.8f units \n" % ee_offset)
 
 
